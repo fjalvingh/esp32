@@ -28,6 +28,19 @@ struct FONT_INFO {
 };
 
 
+struct FRAMESET {
+  int width;
+  int height;
+  int framecount;
+  CRGB color;
+  const byte** frames;
+};
+
+const byte* pacman_framelist[] = { pacman1, pacman2, pacman1, pacman4 };
+
+const FRAMESET pacman = {12, 13, 4, CRGB::Yellow, pacman_framelist };
+
+int pacman_frame = 0;
 
 
 void setup() {
@@ -48,31 +61,57 @@ void setRowLeds(int row, CRGB color) {
 }
 
 void loop() {
+  render81();
+  FastLED.show();
+  delay(5000);
+
+  for(int x = -16; x < 17; x++) {
+    renderPacFrame(x);
+  }
+
+  
 //  const GFXfont* font = &FreeSerif9pt7b;
 //  int w = renderChar(font, 0, 0, '8');
 //  renderChar(font, w, 0, '1');
 
-  render1Bits(pacman1, 12, 13, 0, 0, CRGB::Yellow);
-  FastLED.show();
-
-  memset(leds, 0, sizeof(leds));
-  delay(200);
-  render1Bits(pacman2, 12, 13, 0, 0, CRGB::Yellow);
-  FastLED.show();
-  
-  memset(leds, 0, sizeof(leds));
-  delay(200);
-  render1Bits(pacman1, 12, 13, 0, 0, CRGB::Yellow);
-  FastLED.show();
-
-  memset(leds, 0, sizeof(leds));
-  delay(200);
-  render1Bits(pacman4, 12, 13, 0, 0, CRGB::Yellow);
-  FastLED.show();
-
-  memset(leds, 0, sizeof(leds));
-  delay(200);
+//  render1Bits(pacman1, 12, 13, 0, 0, CRGB::Yellow);
+//  FastLED.show();
+//
+//  memset(leds, 0, sizeof(leds));
+//  delay(200);
+//  render1Bits(pacman2, 12, 13, 0, 0, CRGB::Yellow);
+//  FastLED.show();
+//  
+//  memset(leds, 0, sizeof(leds));
+//  delay(200);
+//  render1Bits(pacman1, 12, 13, 0, 0, CRGB::Yellow);
+//  FastLED.show();
+//
+//  memset(leds, 0, sizeof(leds));
+//  delay(200);
+//  render1Bits(pacman4, 12, 13, 0, 0, CRGB::Yellow);
+//  FastLED.show();
+//
+//  memset(leds, 0, sizeof(leds));
+//  delay(200);
 }
+
+void renderPacFrame(int x) {
+  memset(leds, 0, sizeof(leds));
+  render81();
+  renderFrame(&pacman, x, 0, pacman_frame);
+  FastLED.show();
+  delay(100);
+  
+  
+}
+
+void render81() {
+  const GFXfont* font = &FreeSerif9pt7b;
+  int w = renderChar(font, 0, 0, '8');
+  renderChar(font, w, 0, '1');
+}
+
 
 void setLed(int x, int y, CRGB color) {
   if(x < 0 || x >= 16 || y < 0 || y >= 16) 
@@ -96,7 +135,7 @@ void setLed(int x, int y, CRGB color) {
   leds[apx] = color;
 }
 
-int render1Bits(const byte* pattern, int patwidth, int patheight, int x, int y, CRGB color) {
+void render1Bits(const byte* pattern, int patwidth, int patheight, int x, int y, CRGB color) {
   const byte* src = pattern;
   for(int py = 0; py < patheight; py++) {
     int bitsleft = 0;
@@ -116,6 +155,12 @@ int render1Bits(const byte* pattern, int patwidth, int patheight, int x, int y, 
   }
 }
 
+
+void renderFrame(const FRAMESET* set, int x, int y, int& currentFrame) {
+  render1Bits(set->frames[currentFrame++], set->width, set->height, x, y, set->color);
+  if(currentFrame >= set->framecount)
+    currentFrame = 0;
+}
 
 int renderChar(const GFXfont* fi, int xoff, int yoff, char c) {
   if(c < fi->first || c > fi->last)

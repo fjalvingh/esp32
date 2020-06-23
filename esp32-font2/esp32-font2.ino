@@ -3,6 +3,8 @@
 
 #include <Fonts/FreeSerif9pt7b.h>
 #include "pacman2_1.h"
+#include "pacman2_2.h"
+#include "pacman2_4.h"
 
 #define LED_PIN     27
 #define COLOR_ORDER BRG
@@ -26,6 +28,8 @@ struct FONT_INFO {
 };
 
 
+
+
 void setup() {
   delay(3000);
 
@@ -44,14 +48,30 @@ void setRowLeds(int row, CRGB color) {
 }
 
 void loop() {
-  const GFXfont* font = &FreeSerif9pt7b;
-  int w = renderChar(font, 0, 0, '8');
-  renderChar(font, w, 0, '1');
+//  const GFXfont* font = &FreeSerif9pt7b;
+//  int w = renderChar(font, 0, 0, '8');
+//  renderChar(font, w, 0, '1');
 
   render1Bits(pacman1, 12, 13, 0, 0, CRGB::Yellow);
-  
   FastLED.show();
-  delay(10000);
+
+  memset(leds, 0, sizeof(leds));
+  delay(200);
+  render1Bits(pacman2, 12, 13, 0, 0, CRGB::Yellow);
+  FastLED.show();
+  
+  memset(leds, 0, sizeof(leds));
+  delay(200);
+  render1Bits(pacman1, 12, 13, 0, 0, CRGB::Yellow);
+  FastLED.show();
+
+  memset(leds, 0, sizeof(leds));
+  delay(200);
+  render1Bits(pacman4, 12, 13, 0, 0, CRGB::Yellow);
+  FastLED.show();
+
+  memset(leds, 0, sizeof(leds));
+  delay(200);
 }
 
 void setLed(int x, int y, CRGB color) {
@@ -131,3 +151,14 @@ int renderChar(const GFXfont* fi, int xoff, int yoff, char c) {
 
   return xoff + cWidth + 3;
 }
+
+/*
+ * Getting bitmaps - use the Pixelorama editor to create the animations
+ * Save the animation as separate png files
+ * Each PNG file can now be converted using ImageMagick:
+ * 
+ * convert pacman2_1.png -define h:format=gray -depth 1 pacman2_1.h
+ * 
+ * The depth:1 means we will get 1 bit per pixel; format=gray makes it grayscale. Other options are rgb
+ * and argb, with specific depts = pits per color per pixel.
+ */

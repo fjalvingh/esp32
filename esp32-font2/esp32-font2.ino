@@ -2,13 +2,14 @@
 #include <Adafruit_GFX.h>
 
 #include <Fonts/FreeSerif9pt7b.h>
+#include "pacman2_1.h"
 
 #define LED_PIN     27
 #define COLOR_ORDER BRG
 #define CHIPSET     WS2812
 #define NUM_LEDS    256
 
-#define BRIGHTNESS  128
+#define BRIGHTNESS  40
 #define FRAMES_PER_SECOND 60
 
 bool gReverseDirection = false;
@@ -22,7 +23,6 @@ struct FONT_INFO {
   int spacePixelWidth;
   const void* descriptors;
   const byte* bitmaps;
- 
 };
 
 
@@ -47,6 +47,9 @@ void loop() {
   const GFXfont* font = &FreeSerif9pt7b;
   int w = renderChar(font, 0, 0, '8');
   renderChar(font, w, 0, '1');
+
+  render1Bits(pacman1, 12, 13, 0, 0, CRGB::Yellow);
+  
   FastLED.show();
   delay(10000);
 }
@@ -71,7 +74,26 @@ void setLed(int x, int y, CRGB color) {
   }
 
   leds[apx] = color;
+}
 
+int render1Bits(const byte* pattern, int patwidth, int patheight, int x, int y, CRGB color) {
+  const byte* src = pattern;
+  for(int py = 0; py < patheight; py++) {
+    int bitsleft = 0;
+    int byva = 0;
+    for(int px = 0; px < patwidth; px++) {
+      if(bitsleft <= 0) {
+        byva = (*src++) & 0xff;
+        bitsleft = 7;
+      } else {
+        bitsleft--;
+      }
+      if(byva & 0x80) {
+        setLed(x + px, y + py, color);
+      }
+      byva = byva << 1;
+    }
+  }
 }
 
 

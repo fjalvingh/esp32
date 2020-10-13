@@ -331,7 +331,7 @@ class Pixel{
         break;
     }
     
-    if(seconds % 5 == 0 && secondsTrigger != seconds) {
+    if(seconds % 20 == 0 && secondsTrigger != seconds) {
       secondsTrigger = seconds;
       Sprites.RemoveAllSprites();
       sprite = ++sprite % 6;
@@ -407,7 +407,8 @@ class Pixel{
 
   void setupSmiley() {
     sprSmiley.Setup(15, 15, SpriteSmileyData, 8, _2BIT, SpriteSmileyCols, SpriteSmileyMask);
-    sprSmiley.SetPosition(-15,0);
+//    sprSmiley.SetPosition(-15,0);
+    sprSmiley.SetPosition(0 , (leds.Height() -15) / 2);
     sprSmiley.SetFrame(0,30); 
     sprSmiley.SetMotion(1,15,0,0);
     Sprites.AddSprite(&sprSmiley);

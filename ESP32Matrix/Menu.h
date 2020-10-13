@@ -29,9 +29,9 @@ class Menu {
     DrawOneFrame( ms / 65536, yHueDelta32 / 32768, xHueDelta32 / 32768);
 
     //Black bar behind text
-    for (int i = 48; i<191; i++) {
-      leds(i) = CRGB::Black;
-    }
+//    for (int i = 48; i<191; i++) {
+//      leds(i) = CRGB::Black;
+//    }
     
     displayMenu();
         

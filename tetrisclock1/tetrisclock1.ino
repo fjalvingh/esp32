@@ -170,7 +170,7 @@ void animationHandler()
         finishedAnimating = tetris1Done && tetris2Done && tetris3Done;
 
       } else {
-        finishedAnimating = tetris.drawNumbers(2, 26, showColon);
+        finishedAnimating = tetris.drawNumbers(1, 26, showColon);
       }
     }
     FastLED.show();
@@ -292,7 +292,7 @@ void setup() {
   delay(2000);
 
   // Start the Animation Timer
-  tetris.setText("TINY PICO");
+  tetris.setText("Helo");
 //  animationTimer = timerBegin(1, 80, true);
 //  timerAttachInterrupt(animationTimer, &animationHandler, true);
 //  timerAlarmWrite(animationTimer, 100000, true);
@@ -363,7 +363,7 @@ void handleColonAfterAnimation() {
   // should look like its clearing it.
   uint16_t colour =  showColon ? tetris.tetrisWHITE : tetris.tetrisBLACK;
   // The x position that you draw the tetris animation object
-  int x = twelveHourFormat ? -6 : 2;
+  int x = twelveHourFormat ? -6 : 1;
   // The y position adjusted for where the blocks will fall from
   // (this could be better!)
   int y = 26 - (TETRIS_Y_DROP_DEFAULT * tetris.scale);

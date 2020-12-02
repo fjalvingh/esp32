@@ -308,7 +308,7 @@ void setup() {
     FastLED.show();
     delay(10); //waiting for intro to finish
   }
-  delay(2000);                                                            
+  delay(2000);                                                          
   finishedAnimating = false;
   displayIntro = false;
   tetris.scale = 1;

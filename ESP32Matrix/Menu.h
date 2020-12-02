@@ -43,7 +43,7 @@ class Menu {
             menuChanged(menuItem);
             break;
           case 'd':
-            menuItem = ++menuItem % 4;
+            menuItem = ++menuItem % 5;
             menuChanged(menuItem);
             break;
           case 'r':
@@ -88,6 +88,9 @@ class Menu {
       case 3:
         //Animation highlighted
         sprintf((char *)txtMenu, " PIXEL ART ");
+        break;
+      case 4:
+        sprintf((char *)txtMenu, " ALL WHITE ");
         break;
     }
     ScrollingMsg.SetText((unsigned char *)txtMenu, sizeof(txtMenu)-1);

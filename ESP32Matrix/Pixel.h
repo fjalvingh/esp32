@@ -388,6 +388,7 @@ class Pixel{
     Sprites.RenderSprites();
 
     FastLED.show();
+//    FastLED.delay(500);
 
     return true;
   }

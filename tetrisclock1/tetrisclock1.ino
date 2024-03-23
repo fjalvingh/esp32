@@ -7,6 +7,10 @@
     YouTube: https://www.youtube.com/brianlough
     Tindie: https://www.tindie.com/stores/brianlough/
     Twitter: https://twitter.com/witnessmenow
+
+ convert bitmaps to Adafruit 565 format:
+ http://javl.github.io/image2cpp/
+ 
  *******************************************************************/
 
 // ----------------------------
@@ -14,6 +18,7 @@
 // ----------------------------
 
 #include <WiFi.h>
+#include <HTTPClient.h>           // for weather
 
 // ----------------------------
 // Additional Libraries - each one of these will need to be installed.
@@ -95,6 +100,8 @@ void matrix_clear() {
     // on ESP8266 (not sure about other chips).
 //    memset(leds, 0, NUMMATRIX*3);
 }
+
+#include "sunnyclouds.h"
 
 
 portMUX_TYPE timerMux = portMUX_INITIALIZER_UNLOCKED;
@@ -243,9 +250,15 @@ void setup() {
   FastLED.clear(true);
   FastLED.setBrightness(64);
   FastLED.show();
+
+  //--
+  display.drawRGBBitmap(0, 0, w01d, 32, 32);
+  FastLED.show();
+  delay(2000);
+
   
   //display.begin(16); // Generic ESP32 including Huzzah
-  FastLED.show();
+//  FastLED.show();
 //  display.flushDisplay();
 
   // Setup timer for driving display
@@ -314,6 +327,24 @@ void setup() {
   tetris.scale = 1;
 }
 
+void loadWeather() {
+  HTTPClient http;
+ 
+  http.begin("http://api.openweathermap.org/data/2.5/weather?q=Lelystad,nl&appid=2c4b5287dddf6ee9893850f6eb2d8116"); //Specify the URL
+  int httpCode = http.GET();  //Make the request
+
+  if(httpCode > 0) { //Check for the returning code
+    String payload = http.getString();
+    Serial.println(httpCode);
+    Serial.println(payload);
+  } else {
+    Serial.println("Error on HTTP request");
+  }
+
+  http.end(); //Free the resources
+}
+
+
 void setMatrixTime() {
   String timeString = "";
   String AmPmString = "";
@@ -371,8 +402,10 @@ void handleColonAfterAnimation() {
   tetris.drawColon(x, y, colour);
 }
 
+unsigned long weatherUpdateDue = 0L;
 
 void loop() {
+  
   unsigned long now = millis();
   if (now > oneSecondLoopDue) {
     // We can call this often, but it will only
@@ -387,6 +420,10 @@ void loop() {
       handleColonAfterAnimation();
     }
     oneSecondLoopDue = now + 1000;
+  }
+  if(now >= weatherUpdateDue) {
+    loadWeather();
+    weatherUpdateDue = now + 60000 * 5;
   }
   animationHandler();
   FastLED.show();

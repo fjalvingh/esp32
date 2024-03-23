@@ -9,7 +9,7 @@
 #include <SmartMatrix_GFX.h>
 // CHANGEME, see MatrixHardware_ESP32_V0.h in SmartMatrix/src
 #define GPIOPINOUT ESP32_FORUM_PINOUT
-//#include <SmartLEDShieldV4.h>  // comment out this line for if you're not using SmartLED Shield V4 hardware (this line needs to be before #include <SmartMatrix3.h>)
+#include <SmartLEDShieldV4.h>  // comment out this line for if you're not using SmartLED Shield V4 hardware (this line needs to be before #include <SmartMatrix3.h>)
 #include <SmartMatrix3.h>
 
 // Choose your prefered pixmap

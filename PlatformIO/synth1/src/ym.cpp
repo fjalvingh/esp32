@@ -3,6 +3,18 @@
 #include <Wire.h>
 #include "ym.h"
 
+/*
+ * Info links:
+ * https://github.com/electrified/rc2014-ym2151/blob/main/software/test_programs/beep.bas
+ * https://cx5m.file-hunter.com/fmunit.htm
+ * Also, see halfway on this page for a reasonably good explanation of the registers,
+ * at least a lot better than the crap from Yamaha itself: https://github.com/X16Community/x16-docs/blob/master/X16%20Reference%20-%2011%20-%20Sound%20Programming.md
+ * 
+ * 
+ * The ym2151 is an 8 channel, 4 operator sound chip.
+ * 
+ */
+
 #define MCP23017_IODIRA 0x00
 #define MCP23017_IODIRB 0x01
 #define MCP23017_GPIOA  0x12
@@ -30,6 +42,20 @@
 #define nbit(x)   ( ~bit(x) )
 
 
+/**
+ * Get a register address
+ */
+uint8_t getAddr(uint8_t channel, uint8_t op) {
+    return op * 8 + channel;
+}
+
+void checkOpAndChannel(uint8_t channel, uint8_t op) {
+    if(channel >= 8)
+        throw "Bad channel";
+    if(op >= 4)
+        throw "Bad op";
+}
+
 Ym::Ym(int sda, int scl, int expander) {
     m_expander = expander;
     m_sda = sda;
@@ -40,6 +66,11 @@ void Ym::begin() {
     Wire.begin(m_sda, m_scl);
     xpInitialize();                     // Initialize the MCP23017
     ymReset();                          // Reset the YM2151
+
+    //-- Set all channels to use operator C2
+    for(int i = 0; i < 8; i++)
+        m_operatorOnOffState[i] = 0x40; // Default C2 to ON
+
 }
 
 void Ym::rwait() {
@@ -150,7 +181,59 @@ void Ym::writeReg(uint8_t reg, byte data) {
   ymControl(nbit(GPA_WR));
   rwait();
   ymControl(0xff);
+  m_regState[reg] = data;
 }
+
+void Ym::writeRegM(uint8_t reg, uint8_t value, uint8_t mask) {
+    byte val = (m_regState[reg] & ~mask) | (value & mask);
+    writeReg(reg, val);
+}
+
+
+//-------- Global -------------
+void Ym::lfo(boolean on) {
+    writeRegM(0x01, on ? 0x00 : 0x02, 0x02); 
+}
+
+void Ym::operatorOn(uint8_t channel, uint8_t op, boolean on) {
+    checkOpAndChannel(channel, op);
+
+    //-- Get operators in same order as for all other calls
+   	if(op == 1) {
+		op = 2;
+	} else if(op == 2) {
+		op = 1;
+	}
+
+    //-- Set or reset the appropriate bit
+    op += 3;                                    // Appropriate bit in register 8
+	if(on) {
+		m_operatorOnOffState[channel] = m_operatorOnOffState[channel] | (1 << op);
+	} else {
+		m_operatorOnOffState[channel] = m_operatorOnOffState[channel] & (~(1 << op));
+	}
+}
+
+void Ym::noteOn(uint8_t channel) {
+    uint8_t val = (channel & 0x7) 
+        | m_operatorOnOffState[channel]
+        ;
+    writeReg(0x8, val);
+}
+
+void Ym::noteOff(uint8_t channel) {
+    uint8_t val = (channel & 0x7);                      // All operator bits off
+    writeReg(0x8, val);
+}
+
+void Ym::note(uint8_t channel, boolean on) {
+    if(on)
+        noteOn(channel);
+    else
+        noteOff(channel);
+}
+
+
 
 
 

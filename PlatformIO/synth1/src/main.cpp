@@ -31,6 +31,13 @@
 #define bit(x)    (1 << x)
 #define nbit(x)   ( ~bit(x) )
 
+byte xpLedState = 0xff;
+byte xpControlState = 0xff;
+
+void d(char* s) {
+  Serial.println(s);
+}
+
 void rwait() {
   for(int i = 0; i < 10; i++)
     NOP();
@@ -63,17 +70,29 @@ int xpRead(uint8_t port) {
 void xpInitialize() {
   xpSend(MCP23017_IODIRA, (1 << GPA_IRQ));    // Only IRQ is input, rest is output
   xpSend(MCP23017_IODIRB, 0xff);              // Initialize b as all input
-  xpSend(MCP23017_OLATA, 0xFF);               // B all ports high, as most lines are active-low
+  xpSend(MCP23017_OLATA, 0xFF);               // A all ports high, as most lines are active-low
 }
 
+void xpLed(boolean on) {
+  byte led = on ? 0x80 : 0x00;
+  xpLedState = led;
+  xpSend(MCP23017_OLATA, led | xpControlState);
+}
 
 int ymReadStatus() {
-  return xpRead(1);
+  xpSend(MCP23017_IODIRB, 0xff);              // All lines READ
+  return xpRead(1);                           // Read from the data signals
 }
 
 void ymWaitBusy() {
+  int val = ymReadStatus();
+  if(0 == (val & 0x80)) {
+    return;
+  }
+  d("ym is busy");
+
   for(;;) {
-    int val = ymReadStatus();
+    val = ymReadStatus();
     if(0 == (val & 0x80)) {
       return;
     }
@@ -85,11 +104,16 @@ void ymWaitBusy() {
  * Send a byte to the YM control lines (GPIO A).
  */
 void ymControl(byte val) {
-  xpSend(MCP23017_GPIOA, val);
+  xpControlState  = val;
+  xpSend(MCP23017_GPIOA, (val & 0x7f) | (xpLedState & 0x80));
 }
 
+/**
+ * Send a data byte to B (the ym D lines).
+ */
 void ymData(byte val) {
-  xpSend(MCP23017_GPIOA, val);
+  xpSend(MCP23017_IODIRB, 0x00);        // All outputs
+  xpSend(MCP23017_GPIOB, val);
 }
 
 /**
@@ -119,7 +143,23 @@ void ymWriteReg(int reg, byte data) {
   ymControl(0xff);
 }
 
+byte voice0[] = {
+  0x20, 0xc0,
+  0x58, 0x01,
+  0x98, 0x1f,
+  0xb8, 0x0d,
+  0xf8, 0xf6
+};
+
+void writeList(byte* list, int count) {
+  while(count-- > 0) {
+    ymWriteReg(list[0], list[1]);
+    list += 2;
+  }
+}
+
 void setup() {
+  Serial.begin(9600);
   Wire.begin(21, 22);
 
   xpInitialize();
@@ -132,6 +172,7 @@ void setup() {
 
 
   // put your setup code here, to run once:
+  writeList(voice0, sizeof(voice0) / 2);
 }
 
 int count = 0;
@@ -142,13 +183,27 @@ void loop() {
   // digitalWrite(LED, LOW);
 
   if(count & 0x1) {
-    xpSend(MCP23017_OLATA, 0xff);
+    xpLed(true);
+    // xpSend(MCP23017_OLATA, 0xff);
     digitalWrite(LED, 0);
   } else {
-    xpSend(MCP23017_OLATA, 0x00);
+    xpLed(false);
+    // xpSend(MCP23017_OLATA, 0x00);
     digitalWrite(LED, 1);
   }
+
+  ymWriteReg(0x28, 0x3a);       // Write low note freq to voice 0 freq reg
+  ymWriteReg(0x8, 0);           // Keyup/down register -> release previous note
+  ymWriteReg(0x8, 0x40);        // Play note
+  delay(200);
+
+  ymWriteReg(0x8, 0);           // Keyup/down register -> release previous note
+  delay(200);
+
+  ymWriteReg(0x28, 0x44);       // High note to voice 0 freq reg
+  ymWriteReg(0x8, 0);
+  ymWriteReg(0x8, 0x40);        // Play note
   
-  delay(500);
+  delay(2000);
   count++;
 }

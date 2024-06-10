@@ -69,6 +69,12 @@ Ym::Ym(int sda, int scl, int expander) {
     m_expander = expander;
     m_sda = sda;
     m_scl = scl;
+    for(int i = 0; i < 8; i++) {
+      m_channels[i] = new Channel(this, i);
+      for(int j = 0; j < 4; j++) {
+        m_operators[i * 4 + j] = new Operator(this, i, j);
+      }
+    }
 }
 
 void Ym::begin() {
@@ -334,7 +340,104 @@ void Ym::setAmplitudeModulationSensitivity(uint8_t channel, uint8_t level) {
   writeRegM(0x38 + channel, level, 0x03);
 }
 
+uint8_t calcAddr(uint8_t channel, uint8_t op) {
+  checkOpAndChannel(channel, op);
+  return op * 8 + channel;
+}
 
+void Ym::setOpVolume(uint8_t channel, uint8_t op, uint8_t value) {
+  uint8_t adr = calcAddr(channel, op);
+  writeRegM(0x60 + adr, value, 0x7f);
+}
+
+void Ym::setFrequencyMultiplier(uint8_t channel, uint8_t op, uint8_t value) {
+  uint8_t adr = calcAddr(channel, op);
+  writeRegM(0x40 + adr, value, 0x0f);
+}
+
+void Ym::setDetuneFine(uint8_t channel, uint8_t op, uint8_t value) {
+  uint8_t adr = calcAddr(channel, op);
+  writeRegM(0x40 + adr, (value & 0x7) << 4, 0x70);
+}
+
+void Ym::setDetuneCoarse(uint8_t channel, uint8_t op, uint8_t value) {
+  uint8_t adr = calcAddr(channel, op);
+  writeRegM(0xC0 + adr, (value & 0x3) << 6, 0xc0);
+}
+
+void Ym::setDetune(uint8_t channel, uint8_t op, uint8_t value) {
+  uint8_t adr = calcAddr(channel, op);
+  writeRegM(0xC0 + adr, value << 3, 0xc0);        // Coarse
+  writeRegM(0x40 + adr, value << 4, 0x70);
+}
+
+void Ym::setAttackRate(uint8_t channel, uint8_t op, uint8_t value) {
+  uint8_t adr = calcAddr(channel, op);
+  writeRegM(0x80 + adr, value, 0x1f);
+}
+
+void Ym::setAdsrRateScaling(uint8_t channel, uint8_t op, uint8_t value) {
+  uint8_t adr = calcAddr(channel, op);
+  writeRegM(0x80 + adr, value << 6, 0xc0);
+}
+
+void Ym::setDecayRate(uint8_t channel, uint8_t op, uint8_t value) {
+  uint8_t adr = calcAddr(channel, op);
+  writeRegM(0xa0 + adr, value, 0x1f);
+}
+
+void Ym::setDecayLevel(uint8_t channel, uint8_t op, uint8_t value) {
+  uint8_t adr = calcAddr(channel, op);
+  writeRegM(0xe0 + adr, value << 4, 0xf0);
+}
+
+void Ym::setAmEnable(uint8_t channel, uint8_t op, boolean on) {
+  uint8_t adr = calcAddr(channel, op);
+  writeRegM(0xa0 + adr, on ? 0x80 : 0x00, 0x80);
+}
+
+void Ym::setSustainDelayRate(uint8_t channel, uint8_t op, uint8_t value) {
+  uint8_t adr = calcAddr(channel, op);
+  writeRegM(0xc0 + adr, value, 0x1f);
+}
+
+void Ym::setReleaseRate(uint8_t channel, uint8_t op, uint8_t value) {
+  uint8_t adr = calcAddr(channel, op);
+  writeRegM(0xe0 + adr, value, 0x0f);
+}
+
+void Ym::loadPatch(uint8_t* patch) {
+  loadPatchGlobal(patch);
+  for(int i = 0; i < 8; i++)
+    loadPatch((uint8_t) i, patch);
+}
+
+void Ym::loadPatchGlobal(uint8_t* patch) {
+  setLfoFreq(patch[0]);
+  setLfoAmplitudeDepth(patch[1]);
+  setLfoPhaseDepth(patch[2]);
+  setLfoWaveForm(patch[3]);
+  setNoise(patch[11], patch[4]);
+}
+
+void Ym::loadPatch(uint8_t channel, uint8_t* patch) {
+
+
+
+}
+
+
+
+Channel::Channel(Ym* ym, int channel) {
+    m_ym = ym;
+    m_channel = channel;
+}
+
+Operator::Operator(Ym* ym, uint8_t channel, uint8_t op) {
+  m_ym = ym;
+  m_channel = channel;
+  m_op = op;
+}
 
 
 

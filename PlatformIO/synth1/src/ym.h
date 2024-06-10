@@ -3,6 +3,10 @@
 
 #include <Arduino.h>
 
+enum LfoWaveform {
+    Sawtooth, Square, Triangle, Noise
+};
+
 class Ym {
     public:
         Ym(int sda, int scl, int expanderId);
@@ -21,6 +25,32 @@ class Ym {
 
     /** Global data */
         void lfo(boolean on);
+
+        /**
+         * Set LFO freq, 0 = 0.008Hz, 0xff = 32.6Hz.
+         */
+        void setLfoFreq(uint8_t freq);
+
+        void setLfoWaveForm(uint8_t code);
+
+        void setLfoWaveForm(LfoWaveform form);
+
+        /**
+         * Phase modulation (vibrato) depth.
+         */
+        void setLfoPhaseDepth(uint8_t depth);
+
+        /**
+         * Amplitude modulation depth.
+         */
+        void setLfoAmplitudeDepth(uint8_t depth);
+
+        /**
+         * When enabled (on), C2 of channel 7 will use a noise
+         * waveform instead of a sine waveform.
+         */
+        void setNoise(boolean on, uint8_t freq);
+
 
         /**
          * Set an operator to either enabled or disabled. This takes
@@ -47,10 +77,32 @@ class Ym {
          */
         void note(uint8_t channel, boolean on);
 
+        void setTone(uint8_t channel, uint8_t keyCode, uint8_t keyFraction);
 
-        void setAlgorithm(uint8_t channel);
+        /**
+         * Set the algorith (0..7) (reg 20).
+         */
+        void setAlgorithm(uint8_t channel, uint8_t algo);
 
+        /**
+         * Set M1 feedback level (0..7, reg 0x20).
+         */
+        void setFeedback(uint8_t channel, uint8_t level);
 
+        /**
+         * Set the output channels (left, right) on or off, bit 1 = right, bit 0 = left.
+         */
+        void setOutputChannels(uint8_t channel, uint8_t lr);
+
+        /**
+         * Set sensitivity 0..7 (reg 0x38..0x3f)
+         */
+        void setPhaseModulationSensitivity(uint8_t channel, uint8_t level);
+
+        /**
+         * Set AM sensitivity 0..3 (reg 0x38..0x3f)
+         */
+        void setAmplitudeModulationSensitivity(uint8_t channel, uint8_t level);
 
     protected:
         

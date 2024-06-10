@@ -49,11 +49,20 @@ uint8_t getAddr(uint8_t channel, uint8_t op) {
     return op * 8 + channel;
 }
 
+void raise(char* msg) {
+  throw *msg;
+}
+
 void checkOpAndChannel(uint8_t channel, uint8_t op) {
     if(channel >= 8)
-        throw "Bad channel";
+        raise("Bad channel");
     if(op >= 4)
-        throw "Bad op";
+        raise("Bad op");
+}
+
+void checkChannel(uint8_t channel) {
+  if(channel >= 8)
+    raise("Bad channel");
 }
 
 Ym::Ym(int sda, int scl, int expander) {
@@ -195,6 +204,39 @@ void Ym::lfo(boolean on) {
     writeRegM(0x01, on ? 0x00 : 0x02, 0x02); 
 }
 
+void Ym::setLfoFreq(uint8_t freq) {
+  writeRegM(0x18, 0xff, freq);
+}
+
+void Ym::setLfoWaveForm(uint8_t code) {
+  if(code > 0x3)
+    raise("LFO Waveform > 3");
+  writeRegM(0x1b, code, 0x03);
+}
+
+void Ym::setLfoWaveForm(LfoWaveform form) {
+  setLfoWaveForm((uint8_t) form);
+}
+
+void Ym::setLfoPhaseDepth(uint8_t depth) {
+  if(depth > 127)
+    raise("Depth > 127");
+  writeReg(0x19, 0x80 | depth);
+}
+
+void Ym::setLfoAmplitudeDepth(uint8_t depth) {
+  if(depth > 127)
+    raise("Depth > 127");
+  writeReg(0x19, depth);
+}
+
+void Ym::setNoise(boolean on, uint8_t freq) {
+  if(freq > 0x1f)
+    raise("Noise frequency > 31");
+  byte val = (on ? 0x80 : 0x00) | freq;
+  writeRegM(0x0f, val, 0xff);
+}
+
 void Ym::operatorOn(uint8_t channel, uint8_t op, boolean on) {
     checkOpAndChannel(channel, op);
 
@@ -231,6 +273,65 @@ void Ym::note(uint8_t channel, boolean on) {
         noteOn(channel);
     else
         noteOff(channel);
+}
+
+PROGMEM const unsigned char KeyCodeTable[] = {
+	0x00, 0x01, 0x02, 0x04, 0x05, 0x06, 0x08, 0x09,
+	0x0a, 0x0c, 0x0d, 0x0e, 0x10, 0x11, 0x12, 0x14,
+	0x15, 0x16, 0x18, 0x19, 0x1a, 0x1c, 0x1d, 0x1e,
+	0x20, 0x21, 0x22, 0x24, 0x25, 0x26, 0x28, 0x29,
+	0x2a, 0x2c, 0x2d, 0x2e, 0x30, 0x31, 0x32, 0x34,
+	0x35, 0x36, 0x38, 0x39, 0x3a, 0x3c, 0x3d, 0x3e,
+	0x40, 0x41, 0x42, 0x44, 0x45, 0x46, 0x48, 0x49,
+	0x4a, 0x4c, 0x4d, 0x4e, 0x50, 0x51, 0x52, 0x54,
+	0x55, 0x56, 0x58, 0x59, 0x5a, 0x5c, 0x5d, 0x5e,
+	0x60, 0x61, 0x62, 0x64, 0x65, 0x66, 0x68, 0x69,
+	0x6a, 0x6c, 0x6d, 0x6e, 0x70, 0x71, 0x72, 0x74,
+	0x75, 0x76, 0x78, 0x79, 0x7a, 0x7c, 0x7d, 0x7e,
+};
+
+void Ym::setTone(uint8_t channel, uint8_t keyCode, uint8_t keyFraction) {
+  checkChannel(channel);
+ 	int16_t	kfOffset = (keyFraction & 0x3f);
+	int16_t	noteOffset = keyCode + (keyFraction >> 6);
+	if(noteOffset < 0) 
+    noteOffset = 0;
+	else if(noteOffset > 0xbf) 
+    noteOffset = 0xbf;
+  writeReg(0x30 + channel, kfOffset << 2);
+  writeReg(0x28 + channel, pgm_read_byte_near(KeyCodeTable + noteOffset));
+}
+
+
+void Ym::setAlgorithm(uint8_t channel, uint8_t algo) {
+  checkChannel(channel);
+  writeRegM(0x20 + channel, algo, 0x07);
+}
+
+void Ym::setFeedback(uint8_t channel, uint8_t level) {
+  checkChannel(channel);
+  writeRegM(0x20 + channel, level << 3, 0x38);
+}
+
+void Ym::setOutputChannels(uint8_t channel, uint8_t lr) {
+  checkChannel(channel);
+  if(lr > 3)
+    raise("Left-right channel must be 2 bits only");
+  writeRegM(0x20 + channel, lr << 6, 0xc0);
+}
+
+void Ym::setPhaseModulationSensitivity(uint8_t channel, uint8_t level) {
+  checkChannel(channel);
+  if(level > 7)
+    raise("phase modulation sensitivity > 7");
+  writeRegM(0x38 + channel, level << 4, 0x70);
+}
+
+void Ym::setAmplitudeModulationSensitivity(uint8_t channel, uint8_t level) {
+  checkChannel(channel);
+  if(level > 3)
+    raise("amplitude modulation sensitivity > 3");
+  writeRegM(0x38 + channel, level, 0x03);
 }
 
 
